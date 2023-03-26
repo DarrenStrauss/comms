@@ -5,10 +5,7 @@
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx11.h"
 
-#include "libjuice/juice.h"
 #include "libdatachannel/rtc.hpp"
-
-#include "comms/ip_discovery.h"
 
 // Dear Imgui Declarations
 static ID3D11Device* g_pd3dDevice = NULL;
@@ -56,8 +53,6 @@ int main(int, char**)
     bool show_demo_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-    Comms::IPDiscovery ipDiscovery;
 
     // Main loop
     bool done = false;
