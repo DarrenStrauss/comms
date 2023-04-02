@@ -7,6 +7,8 @@
 
 #include "libdatachannel/rtc.hpp"
 
+#include "room_name_generator.h"
+
 // Dear Imgui Declarations
 static ID3D11Device* g_pd3dDevice = NULL;
 static ID3D11DeviceContext* g_pd3dDeviceContext = NULL;
@@ -54,6 +56,9 @@ int main(int, char**)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+    Comms::RoomNameGenerator roomNameGenerator;
+    std::string roomName = roomNameGenerator.GenerateRoomName();
+
     // Main loop
     bool done = false;
     while (!done)
@@ -76,7 +81,13 @@ int main(int, char**)
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::Begin("IP Address");
+        ImGui::Begin("Room Name");
+        ImGui::Text(roomName.c_str());
+        ImGui::Button("Generate", ImVec2(100, 50));
+        if (ImGui::IsItemClicked())
+        {
+            roomName = roomNameGenerator.GenerateRoomName();
+        }
         ImGui::End();
 
         // Rendering
