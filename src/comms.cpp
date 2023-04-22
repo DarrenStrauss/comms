@@ -1,13 +1,16 @@
 #include <d3d11.h>
 #include <tchar.h>
+#include <cstddef>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <utility>
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx11.h"
 
-#include "libdatachannel/rtc.hpp"
-
-#include "room_name_generator.h"
+#include "web_rtc_peer_connection.h"
 
 // Dear Imgui Declarations
 static ID3D11Device* g_pd3dDevice = NULL;
@@ -20,6 +23,11 @@ void CleanupDeviceD3D();
 void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+struct Receiver {
+    std::shared_ptr<rtc::PeerConnection> conn;
+    std::shared_ptr<rtc::Track> track;
+};
 
 int main(int, char**)
 {
@@ -56,8 +64,8 @@ int main(int, char**)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    Comms::RoomNameGenerator roomNameGenerator;
-    std::string roomName = roomNameGenerator.GenerateRoomName();
+    WebRTCPeerConnection connection;
+    connection.GenerateOfferSDP();
 
     // Main loop
     bool done = false;
@@ -81,14 +89,8 @@ int main(int, char**)
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::Begin("Room Name");
-        ImGui::Text(roomName.c_str());
-        ImGui::Button("Generate", ImVec2(100, 50));
-        if (ImGui::IsItemClicked())
-        {
-            roomName = roomNameGenerator.GenerateRoomName();
-        }
-        ImGui::End();
+        ImGui::Begin("Offer SDP");
+        ImGui::Text(connection.GetOfferSDP().c_str());
 
         // Rendering
         ImGui::Render();
