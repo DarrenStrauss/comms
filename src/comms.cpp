@@ -65,12 +65,15 @@ int main(int, char**)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     WebRTCPeerConnection connection;
-    connection.GenerateOfferSDP();
+    char localSDP[1024]{};
+    char remoteSDP[1024]{};
 
     // Main loop
     bool done = false;
     while (!done)
     {
+        strcpy_s(localSDP, connection.GetLocalSDP().c_str());
+
         // Poll and handle messages (inputs, window resize, etc.)
         // See the WndProc() function below for our to dispatch events to the Win32 backend.
         MSG msg;
@@ -89,8 +92,25 @@ int main(int, char**)
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::Begin("Offer SDP");
-        ImGui::Text(connection.GetOfferSDP().c_str());
+        ImGui::Begin("Local SDP");
+
+        ImGui::InputTextMultiline("", localSDP, sizeof(localSDP));
+
+        if (ImGui::Button("Generate")) {
+            connection.GenerateLocalSDP();
+        }
+
+        ImGui::End();
+
+        ImGui::Begin("Remote SDP");
+
+        ImGui::InputTextMultiline("", remoteSDP, sizeof(remoteSDP));
+        
+        if (ImGui::Button("Accept")) {
+            connection.AcceptRemoteSDP(remoteSDP);
+        }
+
+        ImGui::End();
 
         // Rendering
         ImGui::Render();

@@ -6,30 +6,36 @@ namespace {
 
 WebRTCPeerConnection::WebRTCPeerConnection() :
     _rtcConfig(),
-    _offerSDP("") {
+    _localSDP("") {
     rtc::InitLogger(rtc::LogLevel::Debug);
+
     _rtcConfig.iceServers.emplace_back(StunServerURL);
+    _peerConnection = std::make_shared<rtc::PeerConnection>(_rtcConfig);
 }
 
-void WebRTCPeerConnection::GenerateOfferSDP() {
-    auto offerConnection = std::make_shared<rtc::PeerConnection>(_rtcConfig);
+void WebRTCPeerConnection::GenerateLocalSDP() {
 
-    offerConnection->onGatheringStateChange([this, offerConnection](rtc::PeerConnection::GatheringState state) {
+    _peerConnection->onGatheringStateChange([&](rtc::PeerConnection::GatheringState state) {
 
         if (state == rtc::PeerConnection::GatheringState::Complete) {
-            auto description = offerConnection->localDescription();
-            _offerSDP = std::string(description.value());
+            auto description = _peerConnection->localDescription();
+            _localSDP = std::string(description.value());
         }
     });
 
     rtc::Description::Audio media("audio", rtc::Description::Direction::SendRecv);
     media.addOpusCodec(96);
     media.setBitrate(256);
-    auto track = offerConnection->addTrack(media);
+    auto track = _peerConnection->addTrack(media);
 
-    offerConnection->setLocalDescription();
+    _peerConnection->setLocalDescription();
 }
 
-std::string WebRTCPeerConnection::GetOfferSDP() {
-    return _offerSDP;
+std::string WebRTCPeerConnection::GetLocalSDP() {
+    return _localSDP;
+}
+
+void WebRTCPeerConnection::AcceptRemoteSDP(std::string sdp) {
+    rtc::Description remoteSDP(sdp);
+    _peerConnection->setRemoteDescription(sdp);
 }
