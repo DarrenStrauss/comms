@@ -97,7 +97,7 @@ int main(int, char**)
         ImGui::InputTextMultiline("", localSDP, sizeof(localSDP));
 
         if (ImGui::Button("Generate")) {
-            connection.GenerateLocalSDP();
+            connection.GenerateOfferSDP();
         }
 
         ImGui::End();

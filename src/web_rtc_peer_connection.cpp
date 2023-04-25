@@ -10,18 +10,23 @@ WebRTCPeerConnection::WebRTCPeerConnection() :
     rtc::InitLogger(rtc::LogLevel::Debug);
 
     _rtcConfig.iceServers.emplace_back(StunServerURL);
+
     _peerConnection = std::make_shared<rtc::PeerConnection>(_rtcConfig);
-}
-
-void WebRTCPeerConnection::GenerateLocalSDP() {
-
     _peerConnection->onGatheringStateChange([&](rtc::PeerConnection::GatheringState state) {
 
         if (state == rtc::PeerConnection::GatheringState::Complete) {
             auto description = _peerConnection->localDescription();
+
             _localSDP = std::string(description.value());
         }
     });
+}
+
+std::string WebRTCPeerConnection::GetLocalSDP() {
+    return _localSDP;
+}
+
+void WebRTCPeerConnection::GenerateOfferSDP() {
 
     rtc::Description::Audio media("audio", rtc::Description::Direction::SendRecv);
     media.addOpusCodec(96);
@@ -29,10 +34,6 @@ void WebRTCPeerConnection::GenerateLocalSDP() {
     auto track = _peerConnection->addTrack(media);
 
     _peerConnection->setLocalDescription();
-}
-
-std::string WebRTCPeerConnection::GetLocalSDP() {
-    return _localSDP;
 }
 
 void WebRTCPeerConnection::AcceptRemoteSDP(std::string sdp) {
