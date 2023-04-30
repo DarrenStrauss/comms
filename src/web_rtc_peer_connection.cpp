@@ -1,8 +1,16 @@
 #include "web_rtc_peer_connection.h"
 
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include "cpp-httplib/httplib.h"
+
+#include "json/json.hpp"
+
 namespace {
     const char* StunServerURL = "stun:stun.l.google.com:19302";
+    const char* SignallingServiceURL = "https://australia-southeast1-comms-link.cloudfunctions.net";
 }
+
+using json = nlohmann::json;
 
 WebRTCPeerConnection::WebRTCPeerConnection() :
     _rtcConfig(),
@@ -34,6 +42,28 @@ void WebRTCPeerConnection::GenerateOfferSDP() {
     auto track = _peerConnection->addTrack(media);
 
     _peerConnection->setLocalDescription();
+}
+
+std::string WebRTCPeerConnection::PublishOfferSDP(const std::string& sessionID, const std::string& password = "") const
+{
+    json httpBody = {
+        {"sessionID", sessionID},
+        {"password", password},
+        {"offer", _localSDP}
+    };
+
+    httplib::Client httpClient(SignallingServiceURL);
+    auto response = httpClient.Post("/sessionOffer", httpBody.dump(), "application/json");
+
+    if (!response) {
+        return "Error publishing offer: no response.";
+    }
+    else if (response->status == 200) {
+        return "Offer published successfully.";
+    }
+    else {
+        return "Error publishing offer: " + response->body;
+    }
 }
 
 void WebRTCPeerConnection::AcceptRemoteSDP(std::string sdp) {

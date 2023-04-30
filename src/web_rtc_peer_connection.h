@@ -30,6 +30,16 @@ public:
     */
     void GenerateOfferSDP();
 
+    /**
+    * Publishes the local offer session description to the signalling service.
+    * The SDP is sent via a HTTP POST request.
+    * This will make the offer available to peers.
+    * 
+    * @param sessionID The identifier used for querying offer/answer SDPs for a session.
+    * @return A message indicating that publishing was successful, or an error message.
+    */
+    std::string PublishOfferSDP(const std::string& sessionID, const std::string& password) const;
+
     /*
     * Receives session description information from a peer.
     * The remote sdp is set on the peer connection object.
@@ -41,7 +51,7 @@ public:
     void AcceptRemoteSDP(std::string remoteSDP);
 
 private:
-    rtc::Configuration _rtcConfig; // Configuration for the connection. Contains the google STUN server address.
-    std::shared_ptr<rtc::PeerConnection> _peerConnection; // The peer connection.
-    std::string _localSDP; // The session description information to send to a peer.
+    rtc::Configuration _rtcConfig; // Configuration for the WebRTC connection. Contains the google STUN server address.
+    std::shared_ptr<rtc::PeerConnection> _peerConnection; // The WebRTC peer connection.
+    std::string _localSDP; // The local session description information to send to a peer.
 };

@@ -67,6 +67,10 @@ int main(int, char**)
     WebRTCPeerConnection connection;
     char localSDP[1024]{};
     char remoteSDP[1024]{};
+    std::string publishResult = "";
+
+    char sessionID[90] = "";
+    char password[90] = "";
 
     // Main loop
     bool done = false;
@@ -92,6 +96,13 @@ int main(int, char**)
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
+        ImGui::Begin("Session");
+
+        ImGui::InputText("Session ID", sessionID, sizeof(sessionID));
+        ImGui::InputText("Password", password, sizeof(password));
+
+        ImGui::End();
+
         ImGui::Begin("Local SDP");
 
         ImGui::InputTextMultiline("", localSDP, sizeof(localSDP));
@@ -99,6 +110,12 @@ int main(int, char**)
         if (ImGui::Button("Generate")) {
             connection.GenerateOfferSDP();
         }
+
+        if (ImGui::Button("Publish")) {
+            publishResult = connection.PublishOfferSDP(sessionID, password);
+        }
+
+        ImGui::Text(publishResult.c_str());
 
         ImGui::End();
 
