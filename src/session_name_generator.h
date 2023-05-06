@@ -5,11 +5,11 @@
 #include "boost\iostreams\device\mapped_file.hpp"
 
 /*
-* Generates a room name for a WebRTC session.
-* Room names are constructed from two randomly selected words from a list of 5025 frequently used English words.
+* Generates a name for a WebRTC session.
+* Names are constructed from two randomly selected words from a list of 5025 frequently used English words.
 * The word list is sourced from www.wordfrequency.info
 * and cross referenced against the list of single words from the Moby Word List project (www.archive.org/details/mobywordlists03201gut) to remove hyphenated words.
-* There are 12622800 possible unique room names.
+* There are 12622800 possible unique names.
 * For 2 generations, the probability of collision is 0.00000792%.
 * For 100 generations, the probability of collision is 0.0037%.
 * For 1000 generations, the probably of collision is 72.3%.
@@ -17,14 +17,14 @@
 */
 namespace Comms {
 
-	class RoomNameGenerator {
+	class SessionNameGenerator {
 
 	public:
-		RoomNameGenerator();
+		SessionNameGenerator();
 
 		/*
-		* Generates and returns a human-readable room name to be used to establish a WebRTC session.
-		* Room names are comprised of two English words.
+		* Generates and returns a human-readable name to be used to establish a WebRTC session.
+		* Session names are comprised of two English words.
 		*/
 		std::string GenerateRoomName();
 

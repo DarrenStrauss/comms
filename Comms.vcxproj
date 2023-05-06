@@ -27,7 +27,7 @@
     <ClCompile Include="deps\imgui\imgui_tables.cpp" />
     <ClCompile Include="deps\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\comms.cpp" />
-    <ClCompile Include="src\room_name_generator.cpp" />
+    <ClCompile Include="src\session_name_generator.cpp" />
     <ClCompile Include="src\web_rtc_peer_connection.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -40,7 +40,7 @@
     <ClInclude Include="include\imgui\imstb_textedit.h" />
     <ClInclude Include="include\imgui\imstb_truetype.h" />
     <ClInclude Include="include\comms\room_name_generator.h" />
-    <ClInclude Include="src\room_name_generator.h" />
+    <ClInclude Include="src\session_name_generator.h" />
     <ClInclude Include="src\web_rtc_peer_connection.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
