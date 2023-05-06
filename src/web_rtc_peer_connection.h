@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <optional>
 
 #include "libdatachannel/rtc.hpp"
 
@@ -49,6 +50,20 @@ public:
     * @param remoteSDP The session description information recieved from a peer.
     */
     void AcceptRemoteSDP(std::string remoteSDP);
+
+    /*
+    * Queries the signalling service to retrieve an offer SDP for a given session identifier.
+    * The response from the service depends on whether an offer exists, and whether the correct password is provided.
+    * 
+    * If an offer exists, and the password is correct, the offer is returned.
+    * If an offer exists, but the password is incorrect, the function returns false.
+    * If an offer does not exist the function returns a std::monostate representing no value.
+    * 
+    * @param sessionID The identifier used to query for an offer SDP.
+    * @param password The password used to access the SDP.
+    * @return The offer SDP string, false if the password is incorrect, or std::monostate if there is no offer. 
+    */
+    std::variant<std::monostate, bool, std::string> RetrieveOffer(const std::string& sessionID, const std::string& password) const;
 
 private:
     rtc::Configuration _rtcConfig; // Configuration for the WebRTC connection. Contains the google STUN server address.

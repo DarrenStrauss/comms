@@ -1,5 +1,8 @@
 #include "web_rtc_peer_connection.h"
 
+#include <thread>
+#include <chrono>
+
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "cpp-httplib/httplib.h"
 
@@ -70,3 +73,26 @@ void WebRTCPeerConnection::AcceptRemoteSDP(std::string sdp) {
     rtc::Description remoteSDP(sdp);
     _peerConnection->setRemoteDescription(sdp);
 }
+
+std::variant<std::monostate, bool, std::string> WebRTCPeerConnection::RetrieveOffer(const std::string& sessionID, const std::string& password) const
+{
+    httplib::Client httpClient(SignallingServiceURL);
+
+    httplib::Params httpParams = {
+        {"sessionID", sessionID},
+        {"password",password}
+    };
+    httplib::Headers httpHeaders{};
+
+    auto response = httpClient.Get("/getOffer", httpParams, httpHeaders);
+
+    if (response->status == 200) {
+        return response->body;
+    }
+    else if (response->status == 403) {
+        return false;
+    }
+
+    return std::monostate();
+}
+
