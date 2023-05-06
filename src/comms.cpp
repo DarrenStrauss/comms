@@ -112,7 +112,7 @@ int main(int, char**)
         }
 
         if (ImGui::Button("Publish")) {
-            publishResult = connection.PublishOfferSDP(sessionID, password);
+            publishResult = connection.PublishSDP(Comms::SDPType::Offer, sessionID, password);
         }
 
         ImGui::Text(publishResult.c_str());
