@@ -15,84 +15,85 @@ namespace {
 
 using json = nlohmann::json;
 
-WebRTCPeerConnection::WebRTCPeerConnection() :
-    _rtcConfig(),
-    _localSDP("") {
-    rtc::InitLogger(rtc::LogLevel::Debug);
+namespace Comms {
+    WebRTCPeerConnection::WebRTCPeerConnection() :
+        _rtcConfig(),
+        _localSDP("") {
+        rtc::InitLogger(rtc::LogLevel::Debug);
 
-    _rtcConfig.iceServers.emplace_back(StunServerURL);
+        _rtcConfig.iceServers.emplace_back(StunServerURL);
 
-    _peerConnection = std::make_shared<rtc::PeerConnection>(_rtcConfig);
-    _peerConnection->onGatheringStateChange([&](rtc::PeerConnection::GatheringState state) {
+        _peerConnection = std::make_shared<rtc::PeerConnection>(_rtcConfig);
+        _peerConnection->onGatheringStateChange([&](rtc::PeerConnection::GatheringState state) {
 
-        if (state == rtc::PeerConnection::GatheringState::Complete) {
-            auto description = _peerConnection->localDescription();
+            if (state == rtc::PeerConnection::GatheringState::Complete) {
+                auto description = _peerConnection->localDescription();
 
-            _localSDP = std::string(description.value());
+                _localSDP = std::string(description.value());
+            }
+            });
+    }
+
+    std::string WebRTCPeerConnection::GetLocalSDP() {
+        return _localSDP;
+    }
+
+    void WebRTCPeerConnection::GenerateOfferSDP() {
+
+        rtc::Description::Audio media("audio", rtc::Description::Direction::SendRecv);
+        media.addOpusCodec(96);
+        media.setBitrate(256);
+        auto track = _peerConnection->addTrack(media);
+
+        _peerConnection->setLocalDescription();
+    }
+
+    std::string WebRTCPeerConnection::PublishOfferSDP(const std::string& sessionID, const std::string& password = "") const
+    {
+        json httpBody = {
+            {"sessionID", sessionID},
+            {"password", password},
+            {"offer", _localSDP}
+        };
+
+        httplib::Client httpClient(SignallingServiceURL);
+        auto response = httpClient.Post("/sessionOffer", httpBody.dump(), "application/json");
+
+        if (!response) {
+            return "Error publishing offer: no response.";
         }
-    });
-}
-
-std::string WebRTCPeerConnection::GetLocalSDP() {
-    return _localSDP;
-}
-
-void WebRTCPeerConnection::GenerateOfferSDP() {
-
-    rtc::Description::Audio media("audio", rtc::Description::Direction::SendRecv);
-    media.addOpusCodec(96);
-    media.setBitrate(256);
-    auto track = _peerConnection->addTrack(media);
-
-    _peerConnection->setLocalDescription();
-}
-
-std::string WebRTCPeerConnection::PublishOfferSDP(const std::string& sessionID, const std::string& password = "") const
-{
-    json httpBody = {
-        {"sessionID", sessionID},
-        {"password", password},
-        {"offer", _localSDP}
-    };
-
-    httplib::Client httpClient(SignallingServiceURL);
-    auto response = httpClient.Post("/sessionOffer", httpBody.dump(), "application/json");
-
-    if (!response) {
-        return "Error publishing offer: no response.";
-    }
-    else if (response->status == 200) {
-        return "Offer published successfully.";
-    }
-    else {
-        return "Error publishing offer: " + response->body;
-    }
-}
-
-void WebRTCPeerConnection::AcceptRemoteSDP(std::string sdp) {
-    rtc::Description remoteSDP(sdp);
-    _peerConnection->setRemoteDescription(sdp);
-}
-
-std::variant<std::monostate, bool, std::string> WebRTCPeerConnection::RetrieveOffer(const std::string& sessionID, const std::string& password) const
-{
-    httplib::Client httpClient(SignallingServiceURL);
-
-    httplib::Params httpParams = {
-        {"sessionID", sessionID},
-        {"password",password}
-    };
-    httplib::Headers httpHeaders{};
-
-    auto response = httpClient.Get("/getOffer", httpParams, httpHeaders);
-
-    if (response->status == 200) {
-        return response->body;
-    }
-    else if (response->status == 403) {
-        return false;
+        else if (response->status == 200) {
+            return "Offer published successfully.";
+        }
+        else {
+            return "Error publishing offer: " + response->body;
+        }
     }
 
-    return std::monostate();
-}
+    void WebRTCPeerConnection::AcceptRemoteSDP(std::string sdp) {
+        rtc::Description remoteSDP(sdp);
+        _peerConnection->setRemoteDescription(sdp);
+    }
 
+    std::variant<std::monostate, bool, std::string> WebRTCPeerConnection::RetrieveOffer(const std::string& sessionID, const std::string& password) const
+    {
+        httplib::Client httpClient(SignallingServiceURL);
+
+        httplib::Params httpParams = {
+            {"sessionID", sessionID},
+            {"password",password}
+        };
+        httplib::Headers httpHeaders{};
+
+        auto response = httpClient.Get("/getOffer", httpParams, httpHeaders);
+
+        if (response->status == 200) {
+            return response->body;
+        }
+        else if (response->status == 403) {
+            return false;
+        }
+
+        return std::monostate();
+    }
+}

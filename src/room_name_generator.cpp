@@ -6,39 +6,39 @@ namespace {
 	constexpr const char* WordFileName = "words_en.txt";
 }
 
-Comms::RoomNameGenerator::RoomNameGenerator() :
-	_wordFile(WordFileName),
-	_randomNumberGenerator(std::random_device{}()),
-	_randomNumberDistribution(54, _wordFile.size()) { // First 53 characters used to cite source of word list
-}
-
-std::string Comms::RoomNameGenerator::GenerateRoomName() {
-	std::stringstream stream("");
-
-	stream << GetWordAtOffset(_randomNumberDistribution(_randomNumberGenerator));
-	stream << " ";
-	stream << GetWordAtOffset(_randomNumberDistribution(_randomNumberGenerator));
-
-	return stream.str();
-}
-
-std::string Comms::RoomNameGenerator::GetWordAtOffset(std::size_t offset) {
-	const char* wordStart = _wordFile.data() + offset;
-
-	while (wordStart > _wordFile.data() && *(wordStart - 1) != '\n') {
-		wordStart--;
+namespace Comms {
+	RoomNameGenerator::RoomNameGenerator() :
+		_wordFile(WordFileName),
+		_randomNumberGenerator(std::random_device{}()),
+		_randomNumberDistribution(54, _wordFile.size()) { // First 53 characters used to cite source of word list
 	}
 
-	const char* wordEnd = _wordFile.data() + offset;
+	std::string RoomNameGenerator::GenerateRoomName() {
+		std::stringstream stream("");
 
-	while (wordEnd < (_wordFile.data() + _wordFile.size()) && (*wordEnd != '\r' && *wordEnd != '\n')) {
-		wordEnd++;
+		stream << GetWordAtOffset(_randomNumberDistribution(_randomNumberGenerator));
+		stream << " ";
+		stream << GetWordAtOffset(_randomNumberDistribution(_randomNumberGenerator));
+
+		return stream.str();
 	}
 
-	std::string word(wordStart, wordEnd);
-	word[0] = std::toupper(word[0]);
+	std::string RoomNameGenerator::GetWordAtOffset(std::size_t offset) {
+		const char* wordStart = _wordFile.data() + offset;
 
-	return word;
+		while (wordStart > _wordFile.data() && *(wordStart - 1) != '\n') {
+			wordStart--;
+		}
+
+		const char* wordEnd = _wordFile.data() + offset;
+
+		while (wordEnd < (_wordFile.data() + _wordFile.size()) && (*wordEnd != '\r' && *wordEnd != '\n')) {
+			wordEnd++;
+		}
+
+		std::string word(wordStart, wordEnd);
+		word[0] = std::toupper(word[0]);
+
+		return word;
+	}
 }
-
-
