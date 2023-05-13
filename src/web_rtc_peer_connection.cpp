@@ -39,7 +39,7 @@ namespace Comms {
         });
     }
 
-    rtc::PeerConnection::State WebRTCPeerConnection::Connect()
+    void WebRTCPeerConnection::Connect()
     {
         auto existingOffer = RetrieveOffer();
 
@@ -66,7 +66,10 @@ namespace Comms {
         else {
             _peerConnection->close();
         }
+    }
 
+    rtc::PeerConnection::State WebRTCPeerConnection::GetConnectionState()
+    {
         return _peerConnection->state();
     }
 

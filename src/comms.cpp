@@ -5,6 +5,7 @@
 #include <memory>
 #include <stdexcept>
 #include <utility>
+#include <future>
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
@@ -67,7 +68,8 @@ int main(int, char**)
     char sessionID[90] = "";
     char password[90] = "";
 
-    std::unique_ptr<Comms::WebRTCPeerConnection> connnection;
+    std::unique_ptr<Comms::WebRTCPeerConnection> connection;
+    std::future<void> connectionFuture;
 
     // Main loop
     bool done = false;
@@ -97,10 +99,23 @@ int main(int, char**)
         ImGui::InputText("Password", password, sizeof(password));
 
         if (ImGui::Button("Connect")) {
-            connnection = std::make_unique<Comms::WebRTCPeerConnection>(std::string(sessionID), std::string(password));
-            connnection->Connect();
+            connection.reset(new Comms::WebRTCPeerConnection(std::string(sessionID), std::string(password)));
+
+            connectionFuture = std::async(std::launch::async, [&connection]() {
+                return connection->Connect();
+            });
         }
 
+        if (connection != nullptr) {
+            switch (connection->GetConnectionState()) {
+                case rtc::PeerConnection::State::Connected: ImGui::Text("Connected"); break;
+                case rtc::PeerConnection::State::Disconnected: ImGui::Text("Disconnected"); break;
+                case rtc::PeerConnection::State::Failed: ImGui::Text("Failed"); break;
+                case rtc::PeerConnection::State::Closed: ImGui::Text("Closed"); break;
+                default: ImGui::Text("Connecting..."); break;
+            }
+        }
+        
         ImGui::End();
 
         // Rendering

@@ -37,10 +37,13 @@ namespace Comms {
         * If no connection offer with this name has been made, this connection will make the offer and wait for a response.
         * If a connection offer has been made, this connection will attempt to accept the offer and establish the connection.
         * If an offer exists but the user defined password does not match the offer, this connection will be closed.
-        * 
-        * @return The state of the connection after attempting to establish the connection.
         */
-        rtc::PeerConnection::State Connect();
+        void Connect();
+
+        /*
+        * @return The current state of the WebRTC peer connection
+        */
+        rtc::PeerConnection::State GetConnectionState();
 
     private:
         /*
