@@ -3,6 +3,8 @@
 #include <string>
 #include <optional>
 #include <chrono>
+#include <mutex>
+#include <condition_variable>
 
 #include "libdatachannel/rtc.hpp"
 
@@ -89,12 +91,22 @@ namespace Comms {
         *
         * @param remoteSDP The session description information recieved from a peer.
         */
-        void AcceptRemoteSDP(std::string remoteSDP) const;
+        void AcceptRemoteSDP(std::string remoteSDP);
+
+        /*
+        * The local SDP is set asynchronously when ICE gathering is complete.
+        * This function waits for it to be updated to a non-empty string.
+        */
+        void WaitForLocalSDP();
 
         rtc::Configuration _rtcConfig; // Configuration for the WebRTC connection.
         std::unique_ptr<rtc::PeerConnection> _peerConnection; // The WebRTC peer connection.
-        std::string _localSDP; // The local offer or answer session description information to send to a peer.
+        
         const std::string _name; // The name used to identify a connection.
-        const std::string _password; // The password used to grant access to the connection. 
+        const std::string _password; // The password used to grant access to the connection.
+
+        std::string _localSDP; // The local offer or answer session description information to send to a peer.
+        std::mutex _localSDPMutex; // Mutex to control read and write access to _localSDP.
+        std::condition_variable _localSDPNotEmptyCondition; // Condition used to evaluate if _localSDP has been updated to a non-empty string.
     };
 }

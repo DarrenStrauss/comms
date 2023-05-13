@@ -30,8 +30,11 @@ namespace Comms {
             if (state == rtc::PeerConnection::GatheringState::Complete) {
                 // ICE candidates have been gathered, the local SDP can be made.
                 auto description = _peerConnection->localDescription();
-
-                _localSDP = std::string(description.value()); // An offer or answer depending on whether a remote SDP has been set.
+                {
+                    std::lock_guard<std::mutex> lock(_localSDPMutex);
+                    _localSDP = std::string(description.value()); // An offer or answer depending on whether a remote SDP has been set.
+                }
+                _localSDPNotEmptyCondition.notify_all();
             }
         });
     }
@@ -76,10 +79,7 @@ namespace Comms {
 
         _peerConnection->setLocalDescription();
 
-        // STUN and ICE canidate gathering takes some time to complete.
-        while (_localSDP.empty()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
+        WaitForLocalSDP(); // Waits for the complete Offer SDP including ICE candidates
     }
 
     void WebRTCPeerConnection::PublishSDP(const SDPType type) const
@@ -154,8 +154,16 @@ namespace Comms {
         return std::nullopt;
     }
 
-    void WebRTCPeerConnection::AcceptRemoteSDP(std::string sdp) const {
+    void WebRTCPeerConnection::AcceptRemoteSDP(std::string sdp) {
         rtc::Description remoteSDP(sdp);
         _peerConnection->setRemoteDescription(sdp);
-    }    
+
+        WaitForLocalSDP(); // Waits for the complete Answer SDP including ICE candidates
+    }
+
+    void WebRTCPeerConnection::WaitForLocalSDP()
+    {
+        std::unique_lock<std::mutex> lock(_localSDPMutex);
+        _localSDPNotEmptyCondition.wait(lock, [this]() { return !_localSDP.empty(); });
+    }
 }
