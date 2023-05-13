@@ -5,7 +5,7 @@
 #include "boost\iostreams\device\mapped_file.hpp"
 
 /*
-* Generates a name for a WebRTC session.
+* Generates a name that can be used to identify a WebRTC connection.
 * Names are constructed from two randomly selected words from a list of 5025 frequently used English words.
 * The word list is sourced from www.wordfrequency.info
 * and cross referenced against the list of single words from the Moby Word List project (www.archive.org/details/mobywordlists03201gut) to remove hyphenated words.
@@ -17,16 +17,16 @@
 */
 namespace Comms {
 
-	class SessionNameGenerator {
+	class ConnectionNameGenerator {
 
 	public:
-		SessionNameGenerator();
+		ConnectionNameGenerator();
 
 		/*
-		* Generates and returns a human-readable name to be used to establish a WebRTC session.
+		* Generates and returns a human-readable name to be used to establish a WebRTC connection.
 		* Session names are comprised of two English words.
 		*/
-		std::string GenerateRoomName();
+		std::string GenerateConnectionName();
 
 	private:
 		/*

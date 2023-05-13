@@ -57,7 +57,7 @@ namespace Comms {
         void PublishSDP(const SDPType type) const;
 
         /*
-        * Queries the signalling service to retrieve an offer SDP for a given session identifier.
+        * Queries the signalling service to retrieve an offer SDP for a given connection identifier.
         * The response from the service depends on whether an offer exists, and whether the correct password is provided.
         *
         * If an offer exists, and the password is correct, the offer is returned.
@@ -69,7 +69,7 @@ namespace Comms {
         std::variant<std::monostate, bool, std::string> RetrieveOffer() const;
 
         /*
-        * Queries the signalling service to retrieve an answer SDP for a given session identifier.
+        * Queries the signalling service to retrieve an answer SDP for a given connection identifier.
         * Peers expect to retrieve answers some amount of time following the publication of an offer.
         * Therefore this function will continue to periodically poll the service for an answer.
         *

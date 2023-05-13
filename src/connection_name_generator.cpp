@@ -1,4 +1,4 @@
-#include "session_name_generator.h"
+#include "connection_name_generator.h"
 
 #include <sstream>
 
@@ -7,13 +7,13 @@ namespace {
 }
 
 namespace Comms {
-	SessionNameGenerator::SessionNameGenerator() :
+	ConnectionNameGenerator::ConnectionNameGenerator() :
 		_wordFile(WordFileName),
 		_randomNumberGenerator(std::random_device{}()),
 		_randomNumberDistribution(54, _wordFile.size()) { // First 53 characters used to cite source of word list
 	}
 
-	std::string SessionNameGenerator::GenerateRoomName() {
+	std::string ConnectionNameGenerator::GenerateConnectionName() {
 		std::stringstream stream("");
 
 		stream << GetWordAtOffset(_randomNumberDistribution(_randomNumberGenerator));
@@ -23,7 +23,7 @@ namespace Comms {
 		return stream.str();
 	}
 
-	std::string SessionNameGenerator::GetWordAtOffset(std::size_t offset) {
+	std::string ConnectionNameGenerator::GetWordAtOffset(std::size_t offset) {
 		const char* wordStart = _wordFile.data() + offset;
 
 		while (wordStart > _wordFile.data() && *(wordStart - 1) != '\n') {

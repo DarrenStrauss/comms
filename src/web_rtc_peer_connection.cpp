@@ -85,10 +85,10 @@ namespace Comms {
     void WebRTCPeerConnection::PublishSDP(const SDPType type) const
     {
         const auto typeString = type == SDPType::Offer ? "offer" : "answer";
-        const auto pathName = type == SDPType::Offer ? "/sessionOffer" : "/sessionAnswer";
+        const auto pathName = type == SDPType::Offer ? "/connectionOffer" : "/connectionAnswer";
 
         json httpBody = {
-            {"sessionID", _name},
+            {"connectionName", _name},
             {"password", _password},
             {typeString, _localSDP}
         };
@@ -102,7 +102,7 @@ namespace Comms {
         httplib::Client httpClient(SignallingServiceURL);
 
         httplib::Params httpParams = {
-            {"sessionID", _name},
+            {"connectionName", _name},
             {"password",_password}
         };
         httplib::Headers httpHeaders{};
@@ -124,7 +124,7 @@ namespace Comms {
         httplib::Client httpClient(SignallingServiceURL);
 
         httplib::Params httpParams = {
-            {"sessionID", _name}
+            {"connectionName", _name}
         };
         httplib::Headers httpHeaders{};
 

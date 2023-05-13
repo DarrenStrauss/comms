@@ -91,9 +91,9 @@ int main(int, char**)
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::Begin("Session");
+        ImGui::Begin("Connection");
 
-        ImGui::InputText("Session ID", sessionID, sizeof(sessionID));
+        ImGui::InputText("Connection Name", sessionID, sizeof(sessionID));
         ImGui::InputText("Password", password, sizeof(password));
 
         if (ImGui::Button("Connect")) {
