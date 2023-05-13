@@ -1,8 +1,5 @@
 #include "web_rtc_peer_connection.h"
 
-#include <thread>
-#include <chrono>
-
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "cpp-httplib/httplib.h"
 
@@ -18,26 +15,56 @@ namespace {
 using json = nlohmann::json;
 
 namespace Comms {
-    WebRTCPeerConnection::WebRTCPeerConnection() :
+    WebRTCPeerConnection::WebRTCPeerConnection(std::string name, std::string password) :
         _rtcConfig(),
-        _localSDP("") {
+        _localSDP(""),
+        _name(name),
+        _password(password) {
         rtc::InitLogger(rtc::LogLevel::Debug);
 
         _rtcConfig.iceServers.emplace_back(StunServerURL);
 
-        _peerConnection = std::make_shared<rtc::PeerConnection>(_rtcConfig);
+        _peerConnection = std::make_unique<rtc::PeerConnection>(_rtcConfig);
         _peerConnection->onGatheringStateChange([&](rtc::PeerConnection::GatheringState state) {
 
             if (state == rtc::PeerConnection::GatheringState::Complete) {
+                // ICE candidates have been gathered, the local SDP can be made.
                 auto description = _peerConnection->localDescription();
 
-                _localSDP = std::string(description.value());
+                _localSDP = std::string(description.value()); // An offer or answer depending on whether a remote SDP has been set.
             }
-            });
+        });
     }
 
-    std::string WebRTCPeerConnection::GetLocalSDP() {
-        return _localSDP;
+    rtc::PeerConnection::State WebRTCPeerConnection::Connect()
+    {
+        auto existingOffer = RetrieveOffer();
+
+        // No existing offer, publish a new one.
+        if (std::holds_alternative<std::monostate>(existingOffer)) { 
+
+            GenerateOfferSDP();
+            PublishSDP(SDPType::Offer);
+
+            auto state = _peerConnection->state();
+
+            auto answer = RetrieveAnswer();
+
+            if (answer.has_value()) {
+                AcceptRemoteSDP(*answer);
+            }
+        }
+        // Offer exists, accept and publish an answer.
+        else if (std::holds_alternative<std::string>(existingOffer)) {
+            AcceptRemoteSDP(std::get<std::string>(existingOffer));
+            PublishSDP(SDPType::Answer);
+        }
+        // Incorrect password, close the connection.
+        else {
+            _peerConnection->close();
+        }
+
+        return _peerConnection->state();
     }
 
     void WebRTCPeerConnection::GenerateOfferSDP() {
@@ -48,52 +75,42 @@ namespace Comms {
         auto track = _peerConnection->addTrack(media);
 
         _peerConnection->setLocalDescription();
+
+        // STUN and ICE canidate gathering takes some time to complete.
+        while (_localSDP.empty()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
     }
 
-    std::string WebRTCPeerConnection::PublishSDP(const SDPType type, const std::string& sessionID, const std::string& password = "") const
+    void WebRTCPeerConnection::PublishSDP(const SDPType type) const
     {
         const auto typeString = type == SDPType::Offer ? "offer" : "answer";
         const auto pathName = type == SDPType::Offer ? "/sessionOffer" : "/sessionAnswer";
 
         json httpBody = {
-            {"sessionID", sessionID},
-            {"password", password},
+            {"sessionID", _name},
+            {"password", _password},
             {typeString, _localSDP}
         };
 
         httplib::Client httpClient(SignallingServiceURL);
-        auto response = httpClient.Post(pathName, httpBody.dump(), "application/json");
-
-        if (!response) {
-            return "Error publishing offer: no response.";
-        }
-        else if (response->status == 200) {
-            return "Offer published successfully.";
-        }
-        else {
-            return "Error publishing offer: " + response->body;
-        }
+        httpClient.Post(pathName, httpBody.dump(), "application/json");
     }
 
-    void WebRTCPeerConnection::AcceptRemoteSDP(std::string sdp) {
-        rtc::Description remoteSDP(sdp);
-        _peerConnection->setRemoteDescription(sdp);
-    }
-
-    std::variant<std::monostate, bool, std::string> WebRTCPeerConnection::RetrieveOffer(const std::string& sessionID, const std::string& password) const
+    std::variant<std::monostate, bool, std::string> WebRTCPeerConnection::RetrieveOffer() const
     {
         httplib::Client httpClient(SignallingServiceURL);
 
         httplib::Params httpParams = {
-            {"sessionID", sessionID},
-            {"password",password}
+            {"sessionID", _name},
+            {"password",_password}
         };
         httplib::Headers httpHeaders{};
 
         auto response = httpClient.Get("/getOffer", httpParams, httpHeaders);
 
         if (response->status == 200) {
-            return response->body;
+            return json::parse(response->body).value("data", "");
         }
         else if (response->status == 403) {
             return false;
@@ -102,12 +119,12 @@ namespace Comms {
         return std::monostate();
     }
 
-    std::optional<std::string> WebRTCPeerConnection::RetrieveAnswer(const std::string& sessionID) const
+    std::optional<std::string> WebRTCPeerConnection::RetrieveAnswer() const
     {
         httplib::Client httpClient(SignallingServiceURL);
 
         httplib::Params httpParams = {
-            {"sessionID", sessionID}
+            {"sessionID", _name}
         };
         httplib::Headers httpHeaders{};
 
@@ -116,9 +133,9 @@ namespace Comms {
 
         do {
             auto response = httpClient.Get("/getAnswer", httpParams, httpHeaders);
-            
+
             if (response->status == 200) {
-                return response->body;
+                return json::parse(response->body).value("data", "");
             }
             else if (response->status == 404) {
 
@@ -136,4 +153,9 @@ namespace Comms {
 
         return std::nullopt;
     }
+
+    void WebRTCPeerConnection::AcceptRemoteSDP(std::string sdp) const {
+        rtc::Description remoteSDP(sdp);
+        _peerConnection->setRemoteDescription(sdp);
+    }    
 }
