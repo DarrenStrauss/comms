@@ -26,6 +26,7 @@
     <ClCompile Include="deps\imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="deps\imgui\imgui_tables.cpp" />
     <ClCompile Include="deps\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="deps\opuscpp\opus_wrapper.cc" />
     <ClCompile Include="src\comms.cpp" />
     <ClCompile Include="src\connection_name_generator.cpp" />
     <ClCompile Include="src\web_rtc_peer_connection.cpp" />
@@ -40,6 +41,7 @@
     <ClInclude Include="include\imgui\imstb_textedit.h" />
     <ClInclude Include="include\imgui\imstb_truetype.h" />
     <ClInclude Include="include\comms\room_name_generator.h" />
+    <ClInclude Include="include\opuscpp\opus_wrapper.h" />
     <ClInclude Include="src\connection_name_generator.h" />
     <ClInclude Include="src\web_rtc_peer_connection.h" />
   </ItemGroup>
@@ -181,8 +183,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\openssl;$(SolutionDir)lib\boost;$(SolutionDir)lib\libdatachannel;$(DXSDK_DIR)\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;datachannel.lib;datachannel-static.lib;libboost_iostreams-vc143-mt-x64-1_81.lib;libcrypto.lib;libssl.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\opus;$(SolutionDir)lib\libsoundio;$(SolutionDir)lib\openssl;$(SolutionDir)lib\boost;$(SolutionDir)lib\libdatachannel;$(DXSDK_DIR)\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;datachannel.lib;datachannel-static.lib;libboost_iostreams-vc143-mt-x64-1_81.lib;libcrypto.lib;libssl.lib;soundio.lib;opus.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

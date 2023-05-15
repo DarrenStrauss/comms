@@ -1,0 +1,4 @@
+The following are modifications that were made to the google/opuscpp library obtained from https://github.com/google/opuscpp for use in this project.
+1. Omitted .gitignore, BUILD, CONTRIBUTING.md, README.md, WORKSPACE and opus_wrapper_test.cc files
+2. Modified include on line 21 of opus_wrapper.cc to `#include opuscpp/opus_wrapper.h` to match project include directory structure.
+3. Removed dependency on glog by commenting out `#include "glog/logging.h"` on line 20 of opus_wrapper.cc and subsequent LOG function calls on lines 62, 66, 104, 124, 157 and 170
