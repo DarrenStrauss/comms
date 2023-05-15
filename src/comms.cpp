@@ -12,6 +12,7 @@
 #include "imgui/imgui_impl_dx11.h"
 
 #include "web_rtc_peer_connection.h"
+#include "connection_name_generator.h"
 
 // Dear Imgui Declarations
 static ID3D11Device* g_pd3dDevice = NULL;
@@ -71,6 +72,8 @@ int main(int, char**)
     std::unique_ptr<Comms::WebRTCPeerConnection> connection;
     std::future<void> connectionFuture;
 
+    std::unique_ptr<Comms::ConnectionNameGenerator> connectionNameGenerator;
+
     // Main loop
     bool done = false;
     while (!done)
@@ -96,6 +99,12 @@ int main(int, char**)
         ImGui::Begin("Connection");
 
         ImGui::InputText("Connection Name", sessionID, sizeof(sessionID));
+
+        if (ImGui::Button("Generate")) {
+            connectionNameGenerator.reset(new Comms::ConnectionNameGenerator());
+            strcpy_s(sessionID, sizeof(sessionID), connectionNameGenerator->GenerateConnectionName().c_str());
+        }
+
         ImGui::InputText("Password", password, sizeof(password));
 
         if (ImGui::Button("Connect")) {
