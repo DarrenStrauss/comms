@@ -5,7 +5,7 @@
 #include <memory>
 #include <stdexcept>
 #include <utility>
-#include <future>
+#include <thread>
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
@@ -70,8 +70,6 @@ int main(int, char**)
     char password[90] = "";
 
     std::unique_ptr<Comms::WebRTCPeerConnection> connection;
-    std::future<void> connectionFuture;
-
     std::unique_ptr<Comms::ConnectionNameGenerator> connectionNameGenerator;
 
     // Main loop
@@ -110,9 +108,11 @@ int main(int, char**)
         if (ImGui::Button("Connect")) {
             connection.reset(new Comms::WebRTCPeerConnection(std::string(sessionID), std::string(password)));
 
-            connectionFuture = std::async(std::launch::async, [&connection]() {
-                return connection->Connect();
+            std::thread connectionThread([&connection]() {
+                connection->Connect();
             });
+
+            connectionThread.detach();
         }
 
         if (connection != nullptr) {
