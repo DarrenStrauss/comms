@@ -8,6 +8,8 @@
 #ifndef SOUNDIO_SOUNDIO_H
 #define SOUNDIO_SOUNDIO_H
 
+#define SOUNDIO_STATIC_LIBRARY
+
 #include "endian.h"
 #include <stdbool.h>
 
