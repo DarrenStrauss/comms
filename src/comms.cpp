@@ -13,6 +13,7 @@
 
 #include "web_rtc_peer_connection.h"
 #include "connection_name_generator.h"
+#include "audio_input_output.h"
 
 // Dear Imgui Declarations
 static ID3D11Device* g_pd3dDevice = NULL;
@@ -72,6 +73,14 @@ int main(int, char**)
     std::unique_ptr<Comms::WebRTCPeerConnection> connection;
     std::unique_ptr<Comms::ConnectionNameGenerator> connectionNameGenerator;
 
+    int selectedInputDeviceIndex = 0;
+    int selectedOutputDeviceIndex = 0;
+
+    auto microphoneBuffer = std::make_shared<boost::lockfree::spsc_queue<std::int16_t, boost::lockfree::capacity<262144>>>();
+    auto speakerBuffer = std::make_shared<boost::lockfree::spsc_queue<std::int16_t, boost::lockfree::capacity<262144>>>();
+
+    auto audioInputOutput = std::make_unique<Comms::AudioInputOutput>();
+
     // Main loop
     bool done = false;
     while (!done)
@@ -125,6 +134,54 @@ int main(int, char**)
             }
         }
         
+        ImGui::End();
+
+        ImGui::Begin("Devices");
+
+        std::vector<const char*> inputDevices{};
+        
+        for (auto& deviceName : audioInputOutput->GetAvailableInputDeviceNames()) {
+            inputDevices.push_back(deviceName.c_str());
+        }
+
+        if (ImGui::Combo("Input Devices", &selectedInputDeviceIndex, inputDevices.data(), inputDevices.size())) {
+            audioInputOutput->SetInputDevice(inputDevices[selectedInputDeviceIndex]);
+        }
+
+        auto inputDeviceName = audioInputOutput->GetInputDeviceName();
+
+        if (inputDeviceName != nullptr) {
+            ImGui::Text(inputDeviceName);
+        }
+
+        std::vector<const char*> outputDevices{};
+
+        for (auto& deviceName : audioInputOutput->GetAvailableOutputDeviceNames()) {
+            outputDevices.push_back(deviceName.c_str());
+        }
+
+        if (ImGui::Combo("Output Devices", &selectedOutputDeviceIndex, outputDevices.data(), outputDevices.size())) {
+            audioInputOutput->SetOutputDevice(outputDevices[selectedOutputDeviceIndex]);
+            selectedOutputDeviceIndex = 0;
+        }
+
+        auto outputDeviceName = audioInputOutput->GetOutputDeviceName();
+
+        if (outputDeviceName != nullptr) {
+            ImGui::Text(outputDeviceName);
+        }
+
+        if (ImGui::Button("StartAudio")) {
+            std::thread audioThread([&audioInputOutput, &microphoneBuffer, &speakerBuffer]() {
+                audioInputOutput->StartAudioStreams(microphoneBuffer, speakerBuffer);
+            });
+            audioThread.detach();
+        }
+
+        if (ImGui::Button("StopAudio")) {
+            audioInputOutput->StopAudioStreams();
+        }
+
         ImGui::End();
 
         // Rendering

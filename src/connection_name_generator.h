@@ -4,22 +4,24 @@
 
 #include "boost\iostreams\device\mapped_file.hpp"
 
-/*
-* Generates a name that can be used to identify a WebRTC connection.
-* Names are constructed from two randomly selected words from a list of 5025 frequently used English words.
-* The word list is sourced from www.wordfrequency.info
-* and cross referenced against the list of single words from the Moby Word List project (www.archive.org/details/mobywordlists03201gut) to remove hyphenated words.
-* There are 12622800 possible unique names.
-* For 2 generations, the probability of collision is 0.00000792%.
-* For 100 generations, the probability of collision is 0.0037%.
-* For 1000 generations, the probably of collision is 72.3%.
-* Therefore this generation method should be improved if simultaneous user count is expected to exceed 100 users. 
-*/
 namespace Comms {
-
+	/*
+	* Generates a name that can be used to identify a WebRTC connection.
+	* Names are constructed from two randomly selected words from a list of 5025 frequently used English words.
+	* The word list is sourced from www.wordfrequency.info
+	* and cross referenced against the list of single words from the Moby Word List project (www.archive.org/details/mobywordlists03201gut) to remove hyphenated words.
+	* There are 12622800 possible unique names.
+	* For 2 generations, the probability of collision is 0.00000792%.
+	* For 100 generations, the probability of collision is 0.0037%.
+	* For 1000 generations, the probably of collision is 72.3%.
+	* Therefore this generation method should be improved if simultaneous user count is expected to exceed 100 users.
+	*/
 	class ConnectionNameGenerator {
 
 	public:
+		/*
+		* Constructor
+		*/
 		ConnectionNameGenerator();
 
 		/*

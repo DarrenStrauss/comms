@@ -21,6 +21,8 @@ namespace Comms {
     * The connection will use Media Transport and is assumed to be for audio only using the OPUS codec.
     * The public google STUN server is used for IP address discovery.
     * Connections are identified by a user defined name and protected by a user defined password.
+    * 
+    * WebRTC functionality is provided by the libdatachannel library.
     */
     class WebRTCPeerConnection {
     public:
