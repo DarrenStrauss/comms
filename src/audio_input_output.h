@@ -35,12 +35,12 @@ namespace Comms {
 		/*
 		* @return The name of the input device if one has been selected, else nullptr.
 		*/
-		char* GetInputDeviceName();
+		char* GetInputDeviceName() const;
 
 		/*
 		* @return The name of the output device if one has been selected, else nullptr.
 		*/
-		char* GetOutputDeviceName();
+		char* GetOutputDeviceName() const;
 
 		/*
 		* Selects the input device by name.
@@ -63,12 +63,12 @@ namespace Comms {
 		/*
 		* @return The list of available input device names.
 		*/
-		std::vector<std::string> GetAvailableInputDeviceNames();
+		std::vector<std::string> GetAvailableInputDeviceNames() const;
 
 		/*
 		* @return The list of available output device names.
 		*/
-		std::vector<std::string> GetAvailableOutputDeviceNames();
+		std::vector<std::string> GetAvailableOutputDeviceNames() const;
 
 		/*
 		* Begins reading from the input device via a input stream, and writing to the output device via an output stream.

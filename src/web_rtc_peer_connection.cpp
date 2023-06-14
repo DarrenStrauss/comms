@@ -39,8 +39,7 @@ namespace Comms {
         });
     }
 
-    void WebRTCPeerConnection::Connect()
-    {
+    void WebRTCPeerConnection::Connect() {
         auto existingOffer = RetrieveOffer();
 
         // No existing offer, publish a new one.
@@ -68,16 +67,14 @@ namespace Comms {
         }
     }
 
-    rtc::PeerConnection::State WebRTCPeerConnection::GetConnectionState()
-    {
+    rtc::PeerConnection::State WebRTCPeerConnection::GetConnectionState() {
         return _peerConnection->state();
     }
 
     void WebRTCPeerConnection::GenerateOfferSDP() {
-
         rtc::Description::Audio media("audio", rtc::Description::Direction::SendRecv);
-        media.addOpusCodec(96);
-        media.setBitrate(256);
+        media.addOpusCodec(111);
+        media.setBitrate(64);
         auto track = _peerConnection->addTrack(media);
 
         _peerConnection->setLocalDescription();
@@ -85,8 +82,7 @@ namespace Comms {
         WaitForLocalSDP(); // Waits for the complete Offer SDP including ICE candidates
     }
 
-    void WebRTCPeerConnection::PublishSDP(const SDPType type) const
-    {
+    void WebRTCPeerConnection::PublishSDP(const SDPType type) const {
         const auto typeString = type == SDPType::Offer ? "offer" : "answer";
         const auto pathName = type == SDPType::Offer ? "/connectionOffer" : "/connectionAnswer";
 
@@ -100,8 +96,7 @@ namespace Comms {
         httpClient.Post(pathName, httpBody.dump(), "application/json");
     }
 
-    std::variant<std::monostate, bool, std::string> WebRTCPeerConnection::RetrieveOffer() const
-    {
+    std::variant<std::monostate, bool, std::string> WebRTCPeerConnection::RetrieveOffer() const {
         httplib::Client httpClient(SignallingServiceURL);
 
         httplib::Params httpParams = {
@@ -122,8 +117,7 @@ namespace Comms {
         return std::monostate();
     }
 
-    std::optional<std::string> WebRTCPeerConnection::RetrieveAnswer() const
-    {
+    std::optional<std::string> WebRTCPeerConnection::RetrieveAnswer() const {
         httplib::Client httpClient(SignallingServiceURL);
 
         httplib::Params httpParams = {
@@ -164,8 +158,7 @@ namespace Comms {
         WaitForLocalSDP(); // Waits for the complete Answer SDP including ICE candidates
     }
 
-    void WebRTCPeerConnection::WaitForLocalSDP()
-    {
+    void WebRTCPeerConnection::WaitForLocalSDP() {
         std::unique_lock<std::mutex> lock(_localSDPMutex);
         _localSDPNotEmptyCondition.wait(lock, [this]() { return !_localSDP.empty(); });
     }

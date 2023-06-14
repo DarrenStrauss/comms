@@ -47,11 +47,11 @@ namespace Comms {
 		SetDeviceSampleRate(*_outputDevice, DeviceType::Output);
 	}
 
-	char* AudioInputOutput::GetInputDeviceName() {
+	char* AudioInputOutput::GetInputDeviceName() const {
 		return _inputDevice ? _inputDevice->name : nullptr;
 	}
 
-	char* AudioInputOutput::GetOutputDeviceName() {
+	char* AudioInputOutput::GetOutputDeviceName() const {
 		return _outputDevice ? _outputDevice->name : nullptr;
 	}
 
@@ -63,7 +63,7 @@ namespace Comms {
 		SetDevice(DeviceType::Output, outputDeviceName);
 	}
 
-	std::vector<std::string> AudioInputOutput::GetAvailableInputDeviceNames() {
+	std::vector<std::string> AudioInputOutput::GetAvailableInputDeviceNames() const {
 		if (_inputDevice) {
 			return GetAvailableDeviceNames(DeviceType::Input, _inputDevice->name, _inputDeviceIndex);
 		}
@@ -71,7 +71,7 @@ namespace Comms {
 		return std::vector<std::string>(); // If no selected input device, there are no available input devices on the system.
 	}
 
-	std::vector<std::string> AudioInputOutput::GetAvailableOutputDeviceNames() {
+	std::vector<std::string> AudioInputOutput::GetAvailableOutputDeviceNames() const {
 		if (_outputDevice) {
 			return GetAvailableDeviceNames(DeviceType::Output, _outputDevice->name, _outputDeviceIndex);
 		}
@@ -189,7 +189,7 @@ namespace Comms {
 		for (int i = 0; i < GetDeviceCount(deviceType); i++) {
 
 			if (i != currentDeviceIndex) {
-				auto device = GetDevice(deviceType, i); 
+				const auto device = GetDevice(deviceType, i); 
 
 				if (!device->is_raw) {
 					deviceNames.push_back(std::string(device->name));
@@ -204,7 +204,7 @@ namespace Comms {
 
 	void AudioInputOutput::SetDevice(DeviceType deviceType, const char* newDeviceName) {
 		for (int i = 0; i < GetDeviceCount(deviceType); i++) {
-			auto device = GetDevice(deviceType, i);
+			const auto device = GetDevice(deviceType, i);
 
 			auto& currentDevice = deviceType == DeviceType::Input ? _inputDevice : _outputDevice;
 			auto& currentDeviceIndex = deviceType == DeviceType::Input ? _inputDeviceIndex : _outputDeviceIndex;
