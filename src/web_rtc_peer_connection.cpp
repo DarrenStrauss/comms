@@ -1,5 +1,7 @@
 #include "web_rtc_peer_connection.h"
 
+#include <iostream>
+
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "cpp-httplib/httplib.h"
 
@@ -37,6 +39,19 @@ namespace Comms {
                 _localSDPNotEmptyCondition.notify_all();
             }
         });
+
+        rtc::Description::Audio media("audio", rtc::Description::Direction::SendRecv);
+        media.addSSRC(42, "audio");
+        media.addOpusCodec(111);
+        media.setBitrate(64);
+
+        _mediaTrack = _peerConnection->addTrack(media);
+        _session = std::make_shared<rtc::RtcpReceivingSession>();
+        _mediaTrack->setMediaHandler(_session);
+
+        _mediaTrack->onMessage([](rtc::binary message) {
+            std::cout << message.size() << std::endl;
+        }, nullptr);
     }
 
     void WebRTCPeerConnection::Connect() {
@@ -47,8 +62,6 @@ namespace Comms {
 
             GenerateOfferSDP();
             PublishSDP(SDPType::Offer);
-
-            auto state = _peerConnection->state();
 
             auto answer = RetrieveAnswer();
 
@@ -71,12 +84,11 @@ namespace Comms {
         return _peerConnection->state();
     }
 
-    void WebRTCPeerConnection::GenerateOfferSDP() {
-        rtc::Description::Audio media("audio", rtc::Description::Direction::SendRecv);
-        media.addOpusCodec(111);
-        media.setBitrate(64);
-        auto track = _peerConnection->addTrack(media);
+    void WebRTCPeerConnection::SendAudioData(std::vector<std::byte> opusData) {
+        _mediaTrack->send(opusData.data(), sizeof(std::byte) * opusData.size());
+    }
 
+    void WebRTCPeerConnection::GenerateOfferSDP() {
         _peerConnection->setLocalDescription();
 
         WaitForLocalSDP(); // Waits for the complete Offer SDP including ICE candidates

@@ -47,6 +47,8 @@ namespace Comms {
         */
         rtc::PeerConnection::State GetConnectionState();
 
+        void SendAudioData(std::vector<std::byte> opusData);
+
     private:
         /*
         * Generates a local offer session description string.
@@ -106,6 +108,7 @@ namespace Comms {
 
         rtc::Configuration _rtcConfig; // Configuration for the WebRTC connection.
         std::unique_ptr<rtc::PeerConnection> _peerConnection; // The WebRTC peer connection.
+        std::shared_ptr<rtc::Track> _mediaTrack = nullptr; // The media track used to send and recieve media data across the connection.
         
         const std::string _name; // The name used to identify a connection.
         const std::string _password; // The password used to grant access to the connection.
