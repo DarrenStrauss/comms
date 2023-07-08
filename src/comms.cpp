@@ -123,8 +123,6 @@ int main(int, char**)
                 while (connection->GetConnectionState() != rtc::PeerConnection::State::Connected) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 }
-
-                connection->SendAudioData();
             });
 
             connectionThread.detach();

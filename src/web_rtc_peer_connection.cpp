@@ -46,8 +46,6 @@ namespace Comms {
         media.setBitrate(64);
 
         _mediaTrack = _peerConnection->addTrack(media);
-        _session = std::make_shared<rtc::RtcpReceivingSession>();
-        _mediaTrack->setMediaHandler(_session);
 
         _mediaTrack->onMessage([](rtc::binary message) {
             std::cout << message.size() << std::endl;
