@@ -4,8 +4,8 @@
 #include <functional>
 #include <string>
 
-#include "libsoundio/soundio.h"
 #include "boost/lockfree/spsc_queue.hpp"
+#include "miniaudio/miniaudio.h"
 
 namespace Comms {
 
@@ -20,7 +20,7 @@ namespace Comms {
 	* Reading and writing data is done within the StartAudioStreams method which is intended to be done on a separate thread to the main application thread.
 	* Audio data is stored in boost lockfree queues to prevent blocking the thread while waiting for access to the buffers for reading or writing data.
 	* 
-	* Audio device interaction is provided by the libsoundio library.
+	* Audio device interaction is provided by the miniaudio library.
 	*/
 	class AudioInputOutput
 	{
@@ -28,7 +28,6 @@ namespace Comms {
 	public:
 		/*
 		* Constructor.
-		* Initializes the libsoundio library and sets the input and output devices to the system's default devices.
 		*/
 		AudioInputOutput();
 
@@ -103,7 +102,7 @@ namespace Comms {
 		* @param deviceIndex The index of the device to retrieve.
 		* @return The retrieved device.
 		*/
-		SoundIoDevice* GetDevice(DeviceType deviceType, int deviceIndex) const;
+		void GetDevice(DeviceType deviceType, int deviceIndex) const;
 
 		/*
 		* Retrieves a list of available devices, beginning with the currently selected device.
@@ -122,42 +121,6 @@ namespace Comms {
 		* @param newDeviceName Name of the device to set.
 		*/
 		void SetDevice(DeviceType deviceType, const char* newDeviceName);
-
-		/*
-		* Configures the data format used represent audio data samples.
-		* Data is currently required to be signed 16bit integers.
-		* 
-		* @param device The device to test compatibility against.
-		* @param deviceType Type of the device.
-		*/
-		void SetDeviceFormat(SoundIoDevice& device, DeviceType deviceType);
-
-		/*
-		* Stores a sample rate of the audio data depending on the capabilities of the selected device.
-		* The selected device is tested for compatibility with a number of sample rates, in order of more desired sample rates first.
-		* The first identified compatible sample rate from the following will be used:
-		* 1. 48000Hz
-		* 2. 44100Hz
-		* 3. 96000Hz
-		* 4. 24000Hz
-		*
-		* @param device The device to test compatibility against.
-		* @param deviceType Type of the device.
-		*/
-		void SetDeviceSampleRate(SoundIoDevice& device, DeviceType deviceType);
-
-		std::unique_ptr<SoundIo, std::function<void(SoundIo*)>> _soundio; // Libsoundio library
-		std::unique_ptr<SoundIoDevice, std::function<void(SoundIoDevice*)>> _inputDevice; // Input device representation
-		std::unique_ptr<SoundIoDevice, std::function<void(SoundIoDevice*)>> _outputDevice; // Output device representation
-		std::unique_ptr<SoundIoInStream, std::function<void(SoundIoInStream*)>> _inputStream = nullptr;
-		std::unique_ptr<SoundIoOutStream, std::function<void(SoundIoOutStream*)>> _outputStream = nullptr;
-		int _inputDeviceIndex; // Input device index
-		int _outputDeviceIndex; // Output device index
-		SoundIoFormat _inputFormat; // Input data format
-		SoundIoFormat _outputFormat; // Output data format
-		int _inputSampleRate; // Input data sample rate
-		int _outputSampleRate; // Output data sample rate
-		bool _shouldStream = false; // Whether the input/output data streaming should continue
 	};
 }
 
