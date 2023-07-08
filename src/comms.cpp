@@ -73,13 +73,13 @@ int main(int, char**)
     std::unique_ptr<Comms::WebRTCPeerConnection> connection;
     std::unique_ptr<Comms::ConnectionNameGenerator> connectionNameGenerator;
 
-    int selectedInputDeviceIndex = 0;
-    int selectedOutputDeviceIndex = 0;
-
     auto microphoneBuffer = std::make_shared<boost::lockfree::spsc_queue<std::int16_t, boost::lockfree::capacity<262144>>>();
     auto speakerBuffer = std::make_shared<boost::lockfree::spsc_queue<std::int16_t, boost::lockfree::capacity<262144>>>();
 
-    auto audioInputOutput = std::make_unique<Comms::AudioInputOutput>();
+    auto audioInputOutput = std::make_unique<Comms::AudioInputOutput>(microphoneBuffer, speakerBuffer);
+
+    int selectedInputDeviceIndex = 0;
+    int selectedOutputDeviceIndex = 0;
 
     // Main loop
     bool done = false;
@@ -142,26 +142,28 @@ int main(int, char**)
 
         ImGui::Begin("Devices");
 
-        std::vector<const char*> inputDevices{};
-        
-        for (auto& deviceName : audioInputOutput->GetAvailableInputDeviceNames()) {
-            inputDevices.push_back(deviceName.c_str());
+        const std::string selectedInputDeviceName = audioInputOutput->GetInputDeviceName();
+        std::vector<const char*> inputDevices{ selectedInputDeviceName.c_str() };
+
+        for (auto& deviceName : audioInputOutput->GetInputDeviceNames()) {
+            if (deviceName != selectedInputDeviceName) {
+                inputDevices.push_back(deviceName.c_str());
+            }           
         }
 
         if (ImGui::Combo("Input Devices", &selectedInputDeviceIndex, inputDevices.data(), inputDevices.size())) {
             audioInputOutput->SetInputDevice(inputDevices[selectedInputDeviceIndex]);
         }
 
-        auto inputDeviceName = audioInputOutput->GetInputDeviceName();
+        ImGui::Text(selectedInputDeviceName.c_str());
 
-        if (inputDeviceName != nullptr) {
-            ImGui::Text(inputDeviceName);
-        }
+        const std::string selectedOutputDeviceName = audioInputOutput->GetOutputDeviceName();
+        std::vector<const char*> outputDevices{ selectedOutputDeviceName.c_str() };
 
-        std::vector<const char*> outputDevices{};
-
-        for (auto& deviceName : audioInputOutput->GetAvailableOutputDeviceNames()) {
-            outputDevices.push_back(deviceName.c_str());
+        for (auto& deviceName : audioInputOutput->GetOutputDeviceNames()) {
+            if (deviceName != selectedOutputDeviceName) {
+                outputDevices.push_back(deviceName.c_str());
+            }
         }
 
         if (ImGui::Combo("Output Devices", &selectedOutputDeviceIndex, outputDevices.data(), outputDevices.size())) {
@@ -169,17 +171,10 @@ int main(int, char**)
             selectedOutputDeviceIndex = 0;
         }
 
-        auto outputDeviceName = audioInputOutput->GetOutputDeviceName();
-
-        if (outputDeviceName != nullptr) {
-            ImGui::Text(outputDeviceName);
-        }
+        ImGui::Text(selectedOutputDeviceName.c_str());
 
         if (ImGui::Button("StartAudio")) {
-            std::thread audioThread([&audioInputOutput, &microphoneBuffer, &speakerBuffer]() {
-                audioInputOutput->StartAudioStreams(microphoneBuffer, speakerBuffer);
-            });
-            audioThread.detach();
+            audioInputOutput->StartAudioStreams();
         }
 
         if (ImGui::Button("StopAudio")) {

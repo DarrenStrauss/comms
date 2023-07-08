@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <functional>
 #include <string>
 
 #include "boost/lockfree/spsc_queue.hpp"
@@ -9,15 +8,9 @@
 
 namespace Comms {
 
-	enum class DeviceType { 
-		Input, // Input devices such as a microphone
-		Output // Output devices such as speakers
-	};
-
 	/*
 	* Handles interaction with audio input (e.g. microphone) and output (e.g. speakers) devices.
-	* This includes selecting specfic devices to read from and write to, as well as opening input and output streams to read and write the audio data.
-	* Reading and writing data is done within the StartAudioStreams method which is intended to be done on a separate thread to the main application thread.
+	* This includes listing available audio devices and selecting desired devices to read from and write to.
 	* Audio data is stored in boost lockfree queues to prevent blocking the thread while waiting for access to the buffers for reading or writing data.
 	* 
 	* Audio device interaction is provided by the miniaudio library.
@@ -28,99 +21,107 @@ namespace Comms {
 	public:
 		/*
 		* Constructor.
+		* 
+		* @param inputBuffer Lockfree queue to write input audio data to.
+		* @param outputBuffer Lockfree queue to read output audio data from.
 		*/
-		AudioInputOutput();
+		AudioInputOutput(std::shared_ptr<boost::lockfree::spsc_queue<std::int16_t, boost::lockfree::capacity<262144>>> inputBuffer,
+			std::shared_ptr<boost::lockfree::spsc_queue<std::int16_t, boost::lockfree::capacity<262144>>> outputBuffer);
 
 		/*
-		* @return The name of the input device if one has been selected, else nullptr.
+		* @return The name of the input device if one has been selected, else empty string.
 		*/
-		char* GetInputDeviceName() const;
+		std::string GetInputDeviceName() const;
 
 		/*
-		* @return The name of the output device if one has been selected, else nullptr.
+		* @return The name of the output device if one has been selected, else empty string.
 		*/
-		char* GetOutputDeviceName() const;
+		std::string GetOutputDeviceName() const;
 
 		/*
 		* Selects the input device by name.
-		* The user is generally presented a list of names of available input devices to choose from.
-		* @see GetAvailableInputDeviceNames
+		* The user is presented a list of names of available input devices to choose from.
+		* @see GetInputDeviceNames
 		* 
 		* @param inputDeviceName The name of the device being selected from the list of available devices.
 		*/
-		void SetInputDevice(const char* inputDeviceName);
+		void SetInputDevice(std::string inputDeviceName);
 
 		/*
 		* Selects the ouput device by name.
-		* The user is generally presented a list of names of available output devices to choose from.
-		* @see GetAvailableOutputDeviceNames
+		* The user is presented a list of names of available output devices to choose from.
+		* @see GetOutputDeviceNames.
 		*
 		* @param outputDeviceName The name of the device being selected from the list of available devices.
 		*/
-		void SetOutputDevice(const char* outputDeviceName);
+		void SetOutputDevice(std::string outputDeviceName);
 
 		/*
 		* @return The list of available input device names.
 		*/
-		std::vector<std::string> GetAvailableInputDeviceNames() const;
+		std::vector<std::string> GetInputDeviceNames() const;
 
 		/*
 		* @return The list of available output device names.
 		*/
-		std::vector<std::string> GetAvailableOutputDeviceNames() const;
+		std::vector<std::string> GetOutputDeviceNames() const;
 
 		/*
-		* Begins reading from the input device via a input stream, and writing to the output device via an output stream.
-		* Data read from the input device stream is written to a non-locking single producer single consumer queue.
-		* Data to write to the output stream is read from a non-locking single producer single consumer queue.
-		* Data is read and written as bytes, representing audio samples in a format and frequency dependent on the capabilities of the devices.
-		* This function should be run on an independent thread.
-		* 
-		* @param inputData The queue used to store data from the input device.
-		* @param outputData The queue to used to retrieve data to write to the output device.
+		* Begins reading from the input device and writing to the output device.
 		*/
-		void StartAudioStreams(std::shared_ptr<boost::lockfree::spsc_queue<std::int16_t, boost::lockfree::capacity<262144>>> inputData,
-			std::shared_ptr<boost::lockfree::spsc_queue<std::int16_t, boost::lockfree::capacity<262144>>> outputData);
+		void StartAudioStreams();
 
 		/*
-		* Signals streaming of the audio data to end and destorys the streams.
+		* Stops reading from the input device and writing to the output device.
 		*/
 		void StopAudioStreams();
 
 	private:
 
 		/*
-		* @param deviceType The type of device to query the availabile device count for.
-		* @return The number of available input or output devices.
+		* Convenience structure to simplify iterating over available devices.
 		*/
-		int GetDeviceCount(DeviceType deviceType) const;
+		struct Device {
+			std::string _name; // Device name shown to the user.
+			ma_device_id _id; // Underlying device id used by the WASAPI backend.
+			bool _isInput; // Whether or not the device is an input device (as opposed to output).
+		};
 
 		/*
-		* Retrieves a representation of an audio device from the underlying sound subsystem (WASAPI).
-		* 
-		* @param deviceType The type of device to retrieve.
-		* @param deviceIndex The index of the device to retrieve.
-		* @return The retrieved device.
+		* @return A list of all audio devices available on the system.
 		*/
-		void GetDevice(DeviceType deviceType, int deviceIndex) const;
+		std::vector<Device> GetDevices() const;
 
 		/*
-		* Retrieves a list of available devices, beginning with the currently selected device.
+		* Function to read data from the input device into the input buffer.
+		* Used as a callback and is called when there is audio data available to be read.
 		* 
-		* @param deviceType The type of device to include in the list.
-		* @param currentDeviceName The name of the current device. This is placed first in the list.
-		* @param currentDeviceIndex The index of the current device.
-		* @return The list of available device names.
+		* @param device The input device.
+		* @param output Not used.
+		* @param input Pointer to the audio samples that can be read into the buffer.
+		* @param numFrames Number of audio samples that can be read.
 		*/
-		std::vector<std::string> GetAvailableDeviceNames(DeviceType deviceType, std::string currentDeviceName, int currentDeviceIndex) const;
+		static void ReadFromDevice(ma_device* device, void* output, const void* input, ma_uint32 numFrames);
 
 		/*
-		* Sets a currently selected device.
-		* 
-		* @param deviceType Type of the device to set.
-		* @param newDeviceName Name of the device to set.
+		* Function to write data from the output buffer to the output device.
+		* Used as a callback and is called when the output device is ready to recieve data.
+		* If there is data available in the output buffer, silence (zeros) will be provided to the device.
+		*
+		* @param device The output device.
+		* @param output Pointer to the memory to write audio samples to so that they can be provided to the device.
+		* @param input Not used.
+		* @param numFrames Number of audio samples that can be recieved by the device.
 		*/
-		void SetDevice(DeviceType deviceType, const char* newDeviceName);
+		static void WriteToDevice(ma_device* device, void* output, const void* input, ma_uint32 numFrames);
+
+		std::unique_ptr<ma_context, std::function<void(ma_context*)>> _audioContext; // MiniAudio context. This represents the WASAPI backend.
+		std::unique_ptr<ma_device, std::function<void(ma_device*)>> _inputDevice = nullptr; // Input device.
+		std::unique_ptr<ma_device, std::function<void(ma_device*)>> _outputDevice = nullptr; // Output device.
+		std::string _inputDeviceName = ""; // User readable name for the input device to be shown on the UI.
+		std::string _outputDeviceName = ""; // User readable name for the output device to be shown on the UI.
+		std::shared_ptr<boost::lockfree::spsc_queue<std::int16_t, boost::lockfree::capacity<262144>>> _inputBuffer; // Lockfree queue to store input audio data.
+		std::shared_ptr<boost::lockfree::spsc_queue<std::int16_t, boost::lockfree::capacity<262144>>> _outputBuffer; // Lockfree queue to store output audio data.
 	};
 }
 
